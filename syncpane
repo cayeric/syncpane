@@ -1,0 +1,63 @@
+#! /bin/bash
+
+function process_line()
+{
+    # get enclosing folder
+    DOC_FOLDER="$( dirname "$line" )"
+    DOC_FOLDER=${DOC_FOLDER#.} # trim leading dot
+    DOC_FOLDER=${DOC_FOLDER#/} # trim leading slash
+    PANE_FOLDER="$CWD"/"$PANE"/"$DOC_FOLDER"
+    PANE_FOLDER=${PANE_FOLDER%/} # trim trailing slashes
+
+
+    if [[ ! -d "$PANE_FOLDER" ]]; then mkdir -p "$PANE_FOLDER"; echo "New pane folder created: "$PANE_FOLDER ; fi
+
+    if [[ "$DOC_FOLDER" != "" ]]; then
+        TARGET_PATH="$CWD"/"$PANE"/"$DOC_FOLDER"/"$(basename "$line")"
+    else
+        TARGET_PATH="$CWD"/"$PANE"/"$(basename "$line")"
+    fi
+
+    if [[ ! "$TARGET_PATH" -ef "$line" ]]; then
+        echo "Include note: "$line
+        link "$line" "$TARGET_PATH"
+    fi
+}
+
+function show_help()
+{
+  echo "create or synchronize documents from a repository to a pane folder, that can be made an Obsidian vault."
+  echo "Usage: syncpane PANEFOLDER [REPOSITORY]"
+  echo "  PANEFOLDER - the obsidian vaults root where to copy hardlinks"
+  echo "  REPOSITORY - the root of the document repository to synchronize"
+}
+
+if [[ $# -ne 1 ]] && [[ $# -ne 2 ]]; then show_help; exit 1; fi
+
+PANE=$1
+
+if [[ $# -eq 2 ]]; then ROOT="$2"; else ROOT="$PANE_REPOSITORY_ROOT"; fi
+if [[ "$ROOT" == "" ]]; then
+  echo "Document repository to sync is undefined."
+  echo "Please set environment variable: PANE_REPOSITORY_ROOT to the absolute path of the repository"
+  exit 3
+fi
+
+if [[ ! -d "$PANE" ]]; then echo "Create new pane: "$PANE; mkdir "$PANE"; fi
+
+CWD="$PWD"
+cd "$ROOT"
+
+if [[ "${CWD##$PWD}" != "${CWD}" ]]; then
+    echo "Pane folder must not be located in document root to sync - move or create pane in different location"
+    exit 2
+    cd "$CWD"
+fi
+
+find . -type f -name '*.md' | while read line; do process_line; done
+find . -type f -name '*.png' | while read line; do process_line; done
+find . -type f -name '*.jpg' | while read line; do process_line; done
+find . -type f -name '*.pdf' | while read line; do process_line; done
+
+cd "$CWD"
+echo "Sync done."
