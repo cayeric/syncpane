@@ -7,7 +7,9 @@ script that synchronizes markdown, PDF and jpg files from a document repository 
 
 INSTALL
 =======
-1. copy the syncpane file into the /usr/local/bin folder
+1. copy the syncpane file into the /usr/local/bin folder, set permission accordingly
+
+        sudo cp syncpane /usr/local/bin && sudo chmod ugo+x /usr/local/bin/syncpane
 2. add a PANE_REPOSITORY_ROOT variable with the absolut path to the documents root folder to the profile script
 
         # for zsh environment:
